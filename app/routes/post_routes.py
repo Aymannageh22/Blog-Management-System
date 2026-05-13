@@ -8,7 +8,6 @@ from app.database import SessionLocal
 
 from app.models.post import Post
 from app.models.user import User
-from functools import lru_cache
 
 from app.schemas.post_schema import PostCreate
 from app.schemas.post_schema import PostUpdate
@@ -21,17 +20,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-@lru_cache(maxsize=100)
-def cached_posts_message():
+import json
 
-    return "Posts cache active"
-
-
-@lru_cache(maxsize=100)
-def cached_single_post_message():
-
-    return "Single post cache active"
-
+from app.redis_client import redis_client
 
 router = APIRouter()
 
@@ -82,6 +73,7 @@ def create_post(
     db.add(new_post)
 
     db.commit()
+    redis_client.flushdb()
 
     logger.info(
         f"Post created by user: {current_user.username}"
@@ -110,26 +102,26 @@ def get_posts(
 
     skip = (page - 1) * limit
 
+    cache_key = f"posts_page_{page}_limit_{limit}"
+
+    cached_posts = redis_client.get(cache_key)
+
+    if cached_posts:
+
+        logger.info(
+            "Posts retrieved from Redis cache"
+        )
+
+        return json.loads(cached_posts)
+
     posts = db.query(Post).offset(skip).limit(limit).all()
-   
-    print(cached_posts_message())
 
-
-  
-    logger.info(
-        f"Posts retrieved - page {page} with limit {limit}"
-    )
-
-    return [
+    posts_data = [
         {
             "id": post.id,
-
             "title": post.title,
-
             "content": post.content,
-
             "author": post.author.username,
-
             "comments": [
 
                 build_comment_tree(comment)
@@ -144,6 +136,23 @@ def get_posts(
     ]
 
 
+    redis_client.set(
+
+        cache_key,
+
+        json.dumps(posts_data),
+
+        ex=60
+    )
+
+
+    logger.info(
+        f"Posts retrieved - page {page} with limit {limit}"
+    )
+
+    return posts_data
+
+
 # Get single post
 @router.get(
     "/posts/{post_id}",
@@ -156,11 +165,21 @@ def get_post(
     db: Session = Depends(get_db)
 ):
 
+    cache_key = f"post_{post_id}"
+
+    cached_post = redis_client.get(cache_key)
+
+    if cached_post:
+
+        logger.info(
+            f"Post {post_id} retrieved from Redis cache"
+        )
+
+        return json.loads(cached_post)
+
     post = db.query(Post).filter(
         Post.id == post_id
     ).first()
-
-    print(cached_single_post_message())
 
 
     if not post:
@@ -174,8 +193,7 @@ def get_post(
         f"Post retrieved with id: {post_id}"
     )
 
-
-    return {
+    post_data = {
 
         "id": post.id,
 
@@ -195,6 +213,16 @@ def get_post(
         ]
     }
 
+    redis_client.set(
+
+        cache_key,
+
+        json.dumps(post_data),
+
+        ex=60
+    )
+
+    return post_data
 
 # Update post
 @router.put("/posts/{post_id}")
@@ -239,6 +267,8 @@ def update_post(
 
 
     db.commit()
+
+    redis_client.flushdb()
 
     logger.info(
         f"Post updated by user: {current_user.username}"
@@ -290,6 +320,7 @@ def delete_post(
     db.delete(post)
 
     db.commit()
+    redis_client.flushdb()
 
     logger.info(
         f"Post deleted by user: {current_user.username}"

@@ -13,17 +13,11 @@ from app.models.user import User
 from app.schemas.comment_schema import CommentCreate
 from app.schemas.comment_schema import CommentUpdate
 from app.schemas.comment_schema import CommentResponse
-from functools import lru_cache
 from app.utils.dependencies import get_current_user
 from fastapi import status
 import logging
 
 logger = logging.getLogger(__name__)
-
-@lru_cache(maxsize=100)
-def cached_comments_message():
-
-    return "Comments cache active"
 
 
 router = APIRouter()
@@ -59,7 +53,7 @@ def create_comment(
         Post.id == post_id
     ).first()
 
-    print(cached_comments_message())
+
 
 
     if not post:
