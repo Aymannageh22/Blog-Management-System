@@ -6093,3 +6093,5 @@ WHERE %(param_1)s = comments.post_id
 2026-05-13 19:16:42,015 - INFO - Posts retrieved - page 1 with limit 5
 2026-05-13 19:16:42,015 - INFO - GET /posts Status: 200 Completed in: 0.0317s
 2026-05-13 19:16:42,016 - INFO - ROLLBACK
+2026-05-13 17:08:43,087 - INFO - GET /docs Status: 200 Completed in: 0.0005s
+2026-05-13 17:08:51,443 - INFO - GET /openapi.json Status: 200 Completed in: 0.0288s
