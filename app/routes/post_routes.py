@@ -24,7 +24,10 @@ import json
 
 from app.redis_client import redis_client
 
-router = APIRouter()
+router = APIRouter(
+
+    tags=["Posts"]
+)
 
 
 # Database dependency
@@ -122,6 +125,7 @@ def get_posts(
             "title": post.title,
             "content": post.content,
             "author": post.author.username,
+            "created_at": post.created_at.isoformat() if post.created_at else None,
             "comments": [
 
                 build_comment_tree(comment)
@@ -202,6 +206,8 @@ def get_post(
         "content": post.content,
 
         "author": post.author.username,
+
+        "created_at": post.created_at.isoformat() if post.created_at else None,
 
         "comments": [
 

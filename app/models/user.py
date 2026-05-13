@@ -37,6 +37,11 @@ class User(Base):
         default="reader"
     )
 
+    profile_image = Column(
+        String(255),
+        nullable=True
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.utcnow

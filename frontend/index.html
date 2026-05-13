@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BlogVerse — A modern blog management system with authentication, posts, comments, and real-time metrics.">
+    <title>BlogVerse — Modern Blog Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ===== NAVBAR ===== -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo" id="nav-logo" onclick="showView('dashboard')">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="logo-icon"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                BlogVerse
+            </a>
+            <div class="nav-links" id="nav-links">
+                <button class="nav-btn hidden" id="nav-dashboard-btn" onclick="showView('dashboard')">
+                    Dashboard
+                </button>
+                <button class="nav-btn" id="nav-home-btn" onclick="showView('feed')">
+                    Posts
+                </button>
+                <button class="nav-btn hidden" id="nav-create-btn" onclick="openCreatePost()">
+                    New Post
+                </button>
+                <button class="nav-btn hidden" id="nav-profile-btn" onclick="showView('profile')">
+                    Profile
+                </button>
+                <button class="nav-btn nav-btn-accent" id="nav-login-btn" onclick="showView('auth')">
+                    Sign In
+                </button>
+                <button class="nav-btn nav-btn-signup" id="nav-signup-btn" onclick="showView('auth'); switchAuthTab('register')">
+                    Sign Up
+                </button>
+                <button class="nav-btn nav-btn-danger hidden" id="nav-logout-btn" onclick="logout()">
+                    Sign Out
+                </button>
+                <button class="nav-btn theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== TOAST NOTIFICATIONS ===== -->
+    <div id="toast-container"></div>
+
+    <!-- ===== DASHBOARD VIEW (/ + /metrics) ===== -->
+    <section id="dashboard-view" class="view">
+        <div class="dashboard-container">
+            <header class="feed-header">
+                <h1 class="feed-title">📊 System Dashboard</h1>
+                <p class="feed-subtitle">Live system status and API metrics from the backend</p>
+            </header>
+
+            <!-- Backend Status from GET / -->
+            <div class="dashboard-grid">
+                <div class="stat-card glass-card" id="status-card">
+                    <div class="stat-icon stat-icon-green">⚡</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Backend Status</span>
+                        <span class="stat-value" id="backend-status">Checking...</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon stat-icon-blue">📨</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Requests</span>
+                        <span class="stat-value" id="metric-requests">—</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon stat-icon-red">⚠️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Error Count</span>
+                        <span class="stat-value" id="metric-errors">—</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon stat-icon-purple">⏱️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Avg Response Time</span>
+                        <span class="stat-value" id="metric-avg-time">—</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon stat-icon-yellow">🛡️</div>
+                    <div class="stat-info">
+                        <span class="stat-label">System Health</span>
+                        <span class="stat-value" id="metric-health">—</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon stat-icon-cyan">📝</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Total Posts</span>
+                        <span class="stat-value" id="metric-posts-count">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-actions">
+                <button class="btn btn-primary" onclick="loadDashboard()">🔄 Refresh Metrics</button>
+                <button class="btn btn-outline" onclick="showView('feed')">📖 View Posts</button>
+            </div>
+
+            <!-- Raw API Response -->
+            <div class="raw-response glass-card">
+                <h3>🔗 Raw API Responses</h3>
+                <div class="raw-section">
+                    <h4>GET / — Home Endpoint</h4>
+                    <pre id="raw-home">Loading...</pre>
+                </div>
+                <div class="raw-section">
+                    <h4>GET /metrics — Monitoring Endpoint</h4>
+                    <pre id="raw-metrics">Loading...</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== AUTH VIEW ===== -->
+    <section id="auth-view" class="view hidden">
+        <div class="auth-wrapper">
+            <div class="auth-card glass-card">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" id="login-tab" onclick="switchAuthTab('login')">Sign In</button>
+                    <button class="auth-tab" id="register-tab" onclick="switchAuthTab('register')">Sign Up</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+                    <h1 class="auth-title">Welcome Back</h1>
+                    <p class="auth-subtitle">Sign in to your account to continue</p>
+
+                    <div class="input-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" id="login-email" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="login-submit-btn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
+                    <h1 class="auth-title">Create Account</h1>
+                    <p class="auth-subtitle">Join the community and start writing</p>
+
+                    <div class="input-group">
+                        <label for="register-username">Username</label>
+                        <input type="text" id="register-username" placeholder="johndoe" required autocomplete="username">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="register-email">Email Address</label>
+                        <input type="email" id="register-email" placeholder="you@example.com" required autocomplete="email">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" placeholder="••••••••" required autocomplete="new-password">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="register-role">Account Type</label>
+                        <select id="register-role">
+                            <option value="author">Author — Can create posts</option>
+                            <option value="reader">Reader — Can comment</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="register-submit-btn">
+                        <span class="btn-text">Create Account</span>
+                        <span class="btn-loader hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FEED VIEW ===== -->
+    <section id="feed-view" class="view hidden">
+        <div class="feed-container">
+            <header class="feed-header">
+                <div>
+                    <h1 class="feed-title">Explore Posts</h1>
+                    <p class="feed-subtitle">Discover stories, ideas, and insights from our community</p>
+                </div>
+            </header>
+
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="search-input" placeholder="Search posts by title..." oninput="handleSearch()">
+            </div>
+
+            <div id="posts-grid" class="posts-grid"></div>
+
+            <div id="posts-loading" class="loading-state hidden">
+                <div class="skeleton-grid">
+                    <div class="skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-meta"></div><div class="skeleton-line skeleton-body"></div><div class="skeleton-line skeleton-body short"></div></div>
+                    <div class="skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-meta"></div><div class="skeleton-line skeleton-body"></div><div class="skeleton-line skeleton-body short"></div></div>
+                    <div class="skeleton-card"><div class="skeleton-line skeleton-title"></div><div class="skeleton-line skeleton-meta"></div><div class="skeleton-line skeleton-body"></div><div class="skeleton-line skeleton-body short"></div></div>
+                </div>
+            </div>
+
+            <div id="posts-empty" class="empty-state hidden">
+                <span class="empty-icon">📝</span>
+                <h3>No posts yet</h3>
+                <p>Be the first to share something!</p>
+            </div>
+
+            <div class="pagination" id="pagination">
+                <button class="btn btn-outline" id="prev-page-btn" onclick="changePage(-1)" disabled>← Previous</button>
+                <span class="page-info" id="page-info">Page 1</span>
+                <button class="btn btn-outline" id="next-page-btn" onclick="changePage(1)">Next →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== CREATE / EDIT POST VIEW ===== -->
+    <section id="create-view" class="view hidden">
+        <div class="create-container">
+            <div class="create-card glass-card">
+                <h2 class="create-title" id="create-title">✍️ Create New Post</h2>
+                <form id="post-form" onsubmit="handlePostSubmit(event)">
+                    <input type="hidden" id="edit-post-id" value="">
+
+                    <div class="input-group">
+                        <label for="post-title-input">Title</label>
+                        <input type="text" id="post-title-input" placeholder="An amazing title for your post..." required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="post-content-input">Content</label>
+                        <textarea id="post-content-input" rows="12" placeholder="Share your thoughts, ideas, or stories..." required></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="showView('feed')">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="post-submit-btn">
+                            <span class="btn-text">Publish Post</span>
+                            <span class="btn-loader hidden"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SINGLE POST VIEW ===== -->
+    <section id="post-view" class="view hidden">
+        <div class="post-detail-container">
+            <button class="btn btn-outline btn-back" onclick="showView('feed')">← Back to Feed</button>
+
+            <article class="post-detail glass-card" id="post-detail"></article>
+
+            <!-- Comments Section -->
+            <div class="comments-section glass-card" id="comments-section">
+                <h3 class="comments-title">💬 Comments</h3>
+
+                <form id="comment-form" class="comment-form hidden" onsubmit="handleCommentSubmit(event)">
+                    <textarea id="comment-input" rows="3" placeholder="Write a comment..." required></textarea>
+                    <button type="submit" class="btn btn-primary btn-sm">Post Comment</button>
+                </form>
+
+                <div id="comments-list" class="comments-list"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PROFILE VIEW ===== -->
+    <section id="profile-view" class="view hidden">
+        <div class="profile-container">
+            <div class="profile-card glass-card">
+                <div class="profile-avatar-container">
+                    <label for="avatar-upload" class="profile-avatar-label">
+                        <div class="profile-avatar" id="profile-avatar">?</div>
+                        <div class="profile-avatar-overlay">
+                            <span class="upload-icon">📷</span>
+                            <span class="upload-text">Change</span>
+                        </div>
+                        <div id="avatar-loader" class="avatar-loader hidden"><div class="spinner"></div></div>
+                    </label>
+                    <input type="file" id="avatar-upload" accept="image/png, image/jpeg" class="hidden" onchange="handleAvatarUpload(event)">
+                </div>
+                <h2 class="profile-name" id="profile-name">—</h2>
+                <p class="profile-email" id="profile-email">—</p>
+                <span class="profile-badge" id="profile-badge">—</span>
+            </div>
+
+            <div class="profile-posts-section">
+                <h3 class="profile-posts-title">📝 My Posts</h3>
+                <div id="profile-posts-grid" class="posts-grid" style="padding:0; margin-top:20px;"></div>
+                <div id="profile-posts-empty" class="empty-state hidden">
+                    <span class="empty-icon">🌱</span>
+                    <p>You haven't written any posts yet.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== EDIT COMMENT MODAL ===== -->
+    <div id="edit-comment-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeEditCommentModal()"></div>
+        <div class="modal-content glass-card">
+            <h3>Edit Comment</h3>
+            <form onsubmit="handleEditComment(event)">
+                <input type="hidden" id="edit-comment-id">
+                <textarea id="edit-comment-content" rows="4" required></textarea>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeEditCommentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== REPLY MODAL ===== -->
+    <div id="reply-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeReplyModal()"></div>
+        <div class="modal-content glass-card">
+            <h3>Reply to Comment</h3>
+            <form onsubmit="handleReply(event)">
+                <input type="hidden" id="reply-comment-id">
+                <textarea id="reply-content" rows="4" placeholder="Write your reply..." required></textarea>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeReplyModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Post Reply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer id="api-footer">
+        <div class="footer-container">
+            <p class="footer-copy">BlogVerse © 2026 — Full-Stack Blog Management System</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
